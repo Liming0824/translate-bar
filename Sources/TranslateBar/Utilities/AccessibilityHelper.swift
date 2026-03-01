@@ -4,7 +4,7 @@ import ApplicationServices
 
 enum AccessibilityHelper {
     /// Check if app has Accessibility permission
-    nonisolated(unsafe) private static let promptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
+    private static let promptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
 
     static var hasPermission: Bool {
         AXIsProcessTrustedWithOptions(
