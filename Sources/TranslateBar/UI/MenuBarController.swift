@@ -2,7 +2,8 @@
 import AppKit
 import SwiftUI
 
-final class MenuBarController {
+@MainActor
+final class MenuBarController: NSObject {
     private var statusItem: NSStatusItem?
     private var settingsWindow: NSWindow?
 

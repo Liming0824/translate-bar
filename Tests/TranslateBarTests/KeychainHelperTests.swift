@@ -2,6 +2,7 @@
 import Testing
 @testable import TranslateBar
 
+@Suite(.serialized)
 struct KeychainHelperTests {
     private let testService = "com.translatebar.test"
     private let testAccount = "test-api-key"

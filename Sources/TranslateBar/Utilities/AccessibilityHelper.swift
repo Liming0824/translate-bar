@@ -4,18 +4,18 @@ import ApplicationServices
 
 enum AccessibilityHelper {
     /// Check if app has Accessibility permission
+    nonisolated(unsafe) private static let promptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
+
     static var hasPermission: Bool {
-        let key = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
-        return AXIsProcessTrustedWithOptions(
-            [key: false] as CFDictionary
+        AXIsProcessTrustedWithOptions(
+            [promptKey: false] as CFDictionary
         )
     }
 
     /// Prompt user to grant Accessibility permission
     static func requestPermission() {
-        let key = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
         AXIsProcessTrustedWithOptions(
-            [key: true] as CFDictionary
+            [promptKey: true] as CFDictionary
         )
     }
 

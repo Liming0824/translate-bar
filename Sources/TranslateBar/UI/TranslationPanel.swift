@@ -2,6 +2,7 @@
 import AppKit
 import SwiftUI
 
+@MainActor
 final class TranslationPanel {
     private var panel: NSPanel?
     private var eventMonitor: Any?
