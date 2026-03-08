@@ -24,11 +24,15 @@ final class TranslationPanel {
         )
 
         let hostingView = NSHostingView(rootView: contentView)
-        hostingView.frame = NSRect(x: 0, y: 0, width: 380, height: 1)
+        // Set width first, large height so layout isn't height-constrained
+        hostingView.frame = NSRect(x: 0, y: 0, width: 380, height: 2000)
+        hostingView.needsLayout = true
+        hostingView.layoutSubtreeIfNeeded()
 
         let fittingSize = hostingView.fittingSize
         let panelWidth = min(max(fittingSize.width, 200), 400)
-        let panelHeight = min(fittingSize.height, 300)
+        let screenHeight = NSScreen.main?.visibleFrame.height ?? 800
+        let panelHeight = min(fittingSize.height, screenHeight * 0.75)
 
         let panel = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: panelWidth, height: panelHeight),
@@ -112,6 +116,7 @@ struct TranslationPopupView: View {
     let onDismiss: () -> Void
 
     @State private var copied = false
+    private let scrollThreshold = 400
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -122,13 +127,27 @@ struct TranslationPopupView: View {
                     .lineLimit(3)
             }
 
-            HStack(alignment: .top) {
-                Text(translation)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.primary)
-                    .textSelection(.enabled)
-
-                Spacer(minLength: 8)
+            ZStack(alignment: .topTrailing) {
+                if translation.count > scrollThreshold {
+                    ScrollView {
+                        Text(translation)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.primary)
+                            .textSelection(.enabled)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.trailing, 20)
+                    }
+                    .frame(maxHeight: 450)
+                } else {
+                    Text(translation)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.primary)
+                        .textSelection(.enabled)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.trailing, 20)
+                }
 
                 Button(action: {
                     onCopy()
@@ -143,7 +162,8 @@ struct TranslationPopupView: View {
             }
         }
         .padding(12)
-        .frame(minWidth: 200, maxWidth: 400)
+        .frame(width: 380)
+        .fixedSize(horizontal: true, vertical: true)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
     }
 }

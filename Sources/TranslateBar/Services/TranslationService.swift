@@ -73,11 +73,7 @@ final class TranslationService {
 
         let (data, response) = try await session.data(for: request)
 
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode) else {
-            throw TranslationError.invalidResponse
-        }
-
+        // Always try to parse the body first — Google returns error details as JSON even on 4xx
         return try Self.parseResponse(data: data)
     }
 }
