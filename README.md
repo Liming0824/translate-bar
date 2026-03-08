@@ -5,7 +5,6 @@ A lightweight macOS menu bar app for instant English <-> Chinese translation. Se
 ## Features
 
 - **Keyboard shortcut** — Select text anywhere, press `Cmd+Shift+T` to translate
-- **Right-click service** — Select text > right-click > Services > "Translate with TranslateBar"
 - **Smart language detection** — Automatically detects English vs Chinese and translates in the right direction
 - **Floating popup** — Translation appears near your cursor and dismisses on click
 - **Secure key storage** — Your API key is stored in macOS Keychain, never in plain text
@@ -39,8 +38,8 @@ A lightweight macOS menu bar app for instant English <-> Chinese translation. Se
 ### Option 1 — Build and install the app bundle (recommended)
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/TranslateBar.git
-cd TranslateBar
+git clone https://github.com/Liming0824/translate-bar.git
+cd translate-bar
 bash build-app.sh
 ```
 
@@ -49,8 +48,8 @@ This builds a release binary, bundles it as `TranslateBar.app`, copies it to `/A
 ### Option 2 — Run directly with Swift
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/TranslateBar.git
-cd TranslateBar
+git clone https://github.com/Liming0824/translate-bar.git
+cd translate-bar
 swift build
 .build/debug/TranslateBar
 ```
@@ -63,18 +62,12 @@ swift build
 2. Click the icon > **Settings**
 3. Paste your Google Cloud Translation API key and click **Save**
 4. When prompted, grant **Accessibility permission** in System Settings (required for the keyboard shortcut)
-5. Go to **System Settings > Keyboard > Keyboard Shortcuts > Services** and make sure **"Translate with TranslateBar"** is enabled
 
 ---
 
 ## Usage
 
-| Method | Steps |
-|--------|-------|
-| **Keyboard shortcut** | Select text in any app, press `Cmd+Shift+T` |
-| **Right-click menu** | Select text, right-click > Services > "Translate with TranslateBar" |
-
-The translation pops up near your cursor. Click anywhere to dismiss it.
+Select any text in any app and press `Cmd+Shift+T`. The translation pops up near your cursor — click anywhere to dismiss it.
 
 ---
 
