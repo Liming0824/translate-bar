@@ -27,17 +27,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func handleHotkeyTranslation() {
-        guard let text = AccessibilityHelper.getSelectedText(),
-              !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            if !AccessibilityHelper.hasPermission {
-                AccessibilityHelper.requestPermission()
-                translationPanel.showError("Grant Accessibility permission in System Settings, then try again.")
-            } else {
-                translationPanel.showError("No text selected")
+        Task { @MainActor in
+            guard let text = await AccessibilityHelper.getSelectedText(),
+                  !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                if !AccessibilityHelper.hasPermission {
+                    AccessibilityHelper.requestPermission()
+                    self.translationPanel.showError("Grant Accessibility permission in System Settings, then try again.")
+                } else {
+                    self.translationPanel.showError("No text selected")
+                }
+                return
             }
-            return
+            self.performTranslation(text: text)
         }
-        performTranslation(text: text)
     }
 
     /// NSServices handler — called when user selects "Translate with TranslateBar" from Services menu

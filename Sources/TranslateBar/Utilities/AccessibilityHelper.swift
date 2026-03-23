@@ -20,7 +20,7 @@ enum AccessibilityHelper {
     }
 
     /// Read selected text from the frontmost application
-    static func getSelectedText() -> String? {
+    static func getSelectedText() async -> String? {
         guard hasPermission else { return nil }
 
         guard let frontApp = NSWorkspace.shared.frontmostApplication else { return nil }
@@ -34,7 +34,7 @@ enum AccessibilityHelper {
             &focusedElement
         )
         guard focusResult == .success, let element = focusedElement else {
-            return getSelectedTextViaClipboard()
+            return await getSelectedTextViaClipboard()
         }
 
         var selectedText: CFTypeRef?
@@ -44,44 +44,58 @@ enum AccessibilityHelper {
             &selectedText
         )
 
-        if textResult == .success, let text = selectedText as? String, !text.isEmpty {
+        // Use trimming check — some apps (e.g. Google Docs canvas) return invisible
+        // Unicode characters from kAXSelectedTextAttribute instead of actual text
+        if textResult == .success, let text = selectedText as? String,
+           !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return text
         }
 
-        return getSelectedTextViaClipboard()
+        return await getSelectedTextViaClipboard()
     }
 
-    /// Fallback: simulate Cmd+C and read from clipboard
-    private static func getSelectedTextViaClipboard() -> String? {
+    /// Fallback: simulate Cmd+C and poll clipboard until it updates (up to 600ms).
+    /// Uses cghidEventTap (system-level) so the event routes to the focused renderer
+    /// process in multi-process apps like Chrome.
+    private static func getSelectedTextViaClipboard() async -> String? {
         let pasteboard = NSPasteboard.general
+        let previousChangeCount = pasteboard.changeCount
         let previousContents = pasteboard.string(forType: .string)
 
-        // Simulate Cmd+C
+        // Brief delay so the target app fully processes our hotkey before receiving Cmd+C
+        try? await Task.sleep(nanoseconds: 80_000_000) // 80ms
+
         let source = CGEventSource(stateID: .combinedSessionState)
-        let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0x08, keyDown: true) // 'c'
+        let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0x08, keyDown: true)
         let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0x08, keyDown: false)
         keyDown?.flags = .maskCommand
         keyUp?.flags = .maskCommand
         keyDown?.post(tap: .cghidEventTap)
         keyUp?.post(tap: .cghidEventTap)
 
-        // Brief delay for clipboard to update
-        usleep(100_000) // 100ms
+        // Poll for clipboard change every 50ms, up to 600ms
+        var elapsed = 0
+        var newContents: String? = previousContents
 
-        let newContents = pasteboard.string(forType: .string)
+        while elapsed < 600_000 {
+            try? await Task.sleep(nanoseconds: 50_000_000)
+            elapsed += 50_000
+            if pasteboard.changeCount != previousChangeCount {
+                newContents = pasteboard.string(forType: .string)
+                break
+            }
+        }
 
-        // Restore previous clipboard if we got something new
         if let previous = previousContents, newContents != previousContents {
-            // We got new text, restore old clipboard after a delay
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                pasteboard.clearContents()
-                pasteboard.setString(previous, forType: .string)
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(previous, forType: .string)
             }
         }
 
         if let text = newContents, text != previousContents, !text.isEmpty {
             return text
         }
-        return newContents ?? previousContents
+        return nil
     }
 }
