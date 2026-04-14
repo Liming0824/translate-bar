@@ -5,8 +5,10 @@ import ServiceManagement
 struct SettingsView: View {
     private static let keychainService = "com.translatebar.app"
     private static let keychainAccount = "google-api-key"
+    private static let claudeKeychainAccount = "claude-api-key"
 
     @State private var apiKey: String = ""
+    @State private var claudeApiKey: String = ""
     @State private var launchAtLogin: Bool = false
     @State private var saved = false
     @Environment(\.dismiss) private var dismiss
@@ -21,6 +23,14 @@ struct SettingsView: View {
                     .foregroundColor(.secondary)
             }
 
+            Section("Claude API (Reply Helper)") {
+                SecureField("API Key", text: $claudeApiKey)
+                    .textFieldStyle(.roundedBorder)
+                Text("Get a key from [Anthropic Console](https://console.anthropic.com/settings/keys)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
             Section("General") {
                 Toggle("Launch at login", isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { newValue in
@@ -28,9 +38,16 @@ struct SettingsView: View {
                     }
 
                 HStack {
-                    Text("Keyboard shortcut")
+                    Text("Translate shortcut")
                     Spacer()
                     Text("⌘⇧T")
+                        .foregroundColor(.secondary)
+                }
+
+                HStack {
+                    Text("Reply helper shortcut")
+                    Spacer()
+                    Text("⌘⇧R")
                         .foregroundColor(.secondary)
                 }
             }
@@ -43,30 +60,39 @@ struct SettingsView: View {
                         .font(.caption)
                 }
                 Button("Save") {
-                    saveApiKey()
+                    saveApiKeys()
                 }
                 .keyboardShortcut(.return)
             }
         }
         .formStyle(.grouped)
-        .frame(width: 400, height: 250)
+        .frame(width: 400, height: 350)
         .onAppear {
-            loadApiKey()
+            loadApiKeys()
         }
     }
 
-    private func loadApiKey() {
+    private func loadApiKeys() {
         apiKey = KeychainHelper.retrieve(
             service: Self.keychainService,
             account: Self.keychainAccount
         ) ?? ""
+        claudeApiKey = KeychainHelper.retrieve(
+            service: Self.keychainService,
+            account: Self.claudeKeychainAccount
+        ) ?? ""
     }
 
-    private func saveApiKey() {
+    private func saveApiKeys() {
         try? KeychainHelper.save(
             apiKey,
             service: Self.keychainService,
             account: Self.keychainAccount
+        )
+        try? KeychainHelper.save(
+            claudeApiKey,
+            service: Self.keychainService,
+            account: Self.claudeKeychainAccount
         )
         saved = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {

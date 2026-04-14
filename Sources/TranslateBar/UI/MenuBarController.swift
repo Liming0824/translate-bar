@@ -36,7 +36,7 @@ final class MenuBarController: NSObject {
 
         let settingsView = SettingsView()
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 400, height: 250),
+            contentRect: NSRect(x: 0, y: 0, width: 400, height: 350),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
