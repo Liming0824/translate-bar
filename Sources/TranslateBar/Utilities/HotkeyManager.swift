@@ -4,18 +4,30 @@ import HotKey
 import Carbon
 
 final class HotkeyManager {
-    private var hotKey: HotKey?
-    var onHotkeyPressed: (() -> Void)?
+    private var translateHotKey: HotKey?
+    private var replyHotKey: HotKey?
 
-    /// Default: Cmd+Shift+T
+    var onTranslatePressed: (() -> Void)?
+    var onReplyPressed: (() -> Void)?
+
+    /// Register translate hotkey: Cmd+Shift+T (default)
     func register(key: Key = .t, modifiers: NSEvent.ModifierFlags = [.command, .shift]) {
-        hotKey = HotKey(key: key, modifiers: modifiers)
-        hotKey?.keyDownHandler = { [weak self] in
-            self?.onHotkeyPressed?()
+        translateHotKey = HotKey(key: key, modifiers: modifiers)
+        translateHotKey?.keyDownHandler = { [weak self] in
+            self?.onTranslatePressed?()
+        }
+    }
+
+    /// Register reply hotkey: Cmd+Shift+R (default)
+    func registerReply(key: Key = .r, modifiers: NSEvent.ModifierFlags = [.command, .shift]) {
+        replyHotKey = HotKey(key: key, modifiers: modifiers)
+        replyHotKey?.keyDownHandler = { [weak self] in
+            self?.onReplyPressed?()
         }
     }
 
     func unregister() {
-        hotKey = nil
+        translateHotKey = nil
+        replyHotKey = nil
     }
 }

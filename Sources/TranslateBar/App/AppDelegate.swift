@@ -21,7 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func setupHotkey() {
         hotkeyManager.register()
-        hotkeyManager.onHotkeyPressed = { [weak self] in
+        hotkeyManager.onTranslatePressed = { [weak self] in
             self?.handleHotkeyTranslation()
         }
     }
