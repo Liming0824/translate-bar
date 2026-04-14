@@ -6,9 +6,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let menuBar = MenuBarController()
     private let hotkeyManager = HotkeyManager()
     private let translationPanel = TranslationPanel()
+    private let replyPanel = ReplyPanel()
 
     private static let keychainService = "com.translatebar.app"
     private static let keychainAccount = "google-api-key"
+    private static let claudeKeychainAccount = "claude-api-key"
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         menuBar.setup()
@@ -23,6 +25,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hotkeyManager.register()
         hotkeyManager.onTranslatePressed = { [weak self] in
             self?.handleHotkeyTranslation()
+        }
+
+        hotkeyManager.registerReply()
+        hotkeyManager.onReplyPressed = { [weak self] in
+            self?.handleHotkeyReply()
         }
     }
 
@@ -39,6 +46,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 return
             }
             self.performTranslation(text: text)
+        }
+    }
+
+    private func handleHotkeyReply() {
+        Task { @MainActor in
+            guard let text = await AccessibilityHelper.getSelectedText(),
+                  !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                if !AccessibilityHelper.hasPermission {
+                    AccessibilityHelper.requestPermission()
+                    self.replyPanel.showError("Grant Accessibility permission in System Settings, then try again.")
+                } else {
+                    self.replyPanel.showError("No text selected — select a Slack message first")
+                }
+                return
+            }
+
+            guard let apiKey = KeychainHelper.retrieve(
+                service: Self.keychainService,
+                account: Self.claudeKeychainAccount
+            ), !apiKey.isEmpty else {
+                self.replyPanel.showError("Set your Claude API key in settings")
+                return
+            }
+
+            let service = ClaudeService(apiKey: apiKey)
+
+            self.replyPanel.show(selectedMessage: text) { userIntent in
+                do {
+                    return try await service.generateReply(
+                        selectedMessage: text,
+                        userIntent: userIntent
+                    )
+                } catch {
+                    return "Error: \(error.localizedDescription)"
+                }
+            }
         }
     }
 
