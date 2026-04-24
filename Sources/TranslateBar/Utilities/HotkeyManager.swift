@@ -5,10 +5,10 @@ import Carbon
 
 final class HotkeyManager {
     private var translateHotKey: HotKey?
-    private var replyHotKey: HotKey?
+    private var polishHotKey: HotKey?
 
     var onTranslatePressed: (() -> Void)?
-    var onReplyPressed: (() -> Void)?
+    var onPolishPressed: (() -> Void)?
 
     /// Register translate hotkey: Cmd+Shift+T (default)
     func register(key: Key = .t, modifiers: NSEvent.ModifierFlags = [.command, .shift]) {
@@ -18,16 +18,15 @@ final class HotkeyManager {
         }
     }
 
-    /// Register reply hotkey: Cmd+Shift+R (default)
-    func registerReply(key: Key = .r, modifiers: NSEvent.ModifierFlags = [.command, .shift]) {
-        replyHotKey = HotKey(key: key, modifiers: modifiers)
-        replyHotKey?.keyDownHandler = { [weak self] in
-            self?.onReplyPressed?()
+    func registerPolish(key: Key = .g, modifiers: NSEvent.ModifierFlags = [.command, .shift]) {
+        polishHotKey = HotKey(key: key, modifiers: modifiers)
+        polishHotKey?.keyDownHandler = { [weak self] in
+            self?.onPolishPressed?()
         }
     }
 
     func unregister() {
         translateHotKey = nil
-        replyHotKey = nil
+        polishHotKey = nil
     }
 }

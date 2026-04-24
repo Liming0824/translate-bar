@@ -6,11 +6,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let menuBar = MenuBarController()
     private let hotkeyManager = HotkeyManager()
     private let translationPanel = TranslationPanel()
-    private let replyPanel = ReplyPanel()
 
     private static let keychainService = "com.translatebar.app"
     private static let keychainAccount = "google-api-key"
-    private static let claudeKeychainAccount = "claude-api-key"
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         menuBar.setup()
@@ -27,9 +25,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.handleHotkeyTranslation()
         }
 
-        hotkeyManager.registerReply()
-        hotkeyManager.onReplyPressed = { [weak self] in
-            self?.handleHotkeyReply()
+        hotkeyManager.registerPolish()
+        hotkeyManager.onPolishPressed = { [weak self] in
+            self?.handleHotkeyPolish()
         }
     }
 
@@ -49,38 +47,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func handleHotkeyReply() {
+    private func handleHotkeyPolish() {
         Task { @MainActor in
             guard let text = await AccessibilityHelper.getSelectedText(),
                   !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 if !AccessibilityHelper.hasPermission {
                     AccessibilityHelper.requestPermission()
-                    self.replyPanel.showError("Grant Accessibility permission in System Settings, then try again.")
+                    self.translationPanel.showError("Grant Accessibility permission in System Settings, then try again.")
                 } else {
-                    self.replyPanel.showError("No text selected — select a Slack message first")
+                    self.translationPanel.showError("No text selected")
                 }
                 return
             }
 
-            guard let apiKey = KeychainHelper.retrieve(
-                service: Self.keychainService,
-                account: Self.claudeKeychainAccount
-            ), !apiKey.isEmpty else {
-                self.replyPanel.showError("Set your Claude API key in settings")
-                return
-            }
+            let service = GrammarService()
 
-            let service = ClaudeService(apiKey: apiKey)
-
-            self.replyPanel.show(selectedMessage: text) { userIntent in
-                do {
-                    return try await service.generateReply(
-                        selectedMessage: text,
-                        userIntent: userIntent
-                    )
-                } catch {
-                    return "Error: \(error.localizedDescription)"
-                }
+            do {
+                let polished = try await service.polish(text: text)
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(polished, forType: .string)
+                self.translationPanel.show(original: text, translation: polished)
+            } catch {
+                self.translationPanel.showError(error.localizedDescription)
             }
         }
     }

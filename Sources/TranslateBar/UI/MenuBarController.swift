@@ -36,7 +36,7 @@ final class MenuBarController: NSObject {
 
         let settingsView = SettingsView()
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 400, height: 350),
+            contentRect: NSRect(x: 0, y: 0, width: 400, height: 400),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
@@ -44,10 +44,41 @@ final class MenuBarController: NSObject {
         window.title = "TranslateBar Settings"
         window.contentView = NSHostingView(rootView: settingsView)
         window.center()
+        window.isReleasedWhenClosed = false
+
+        setupMainMenu()
+        NSApp.setActivationPolicy(.regular)
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
 
+        NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification,
+            object: window,
+            queue: .main
+        ) { [weak self] _ in
+            NSApp.setActivationPolicy(.accessory)
+            MainActor.assumeIsolated {
+                self?.settingsWindow = nil
+            }
+        }
+
         settingsWindow = window
+    }
+
+    private func setupMainMenu() {
+        let mainMenu = NSMenu()
+
+        let editMenu = NSMenu(title: "Edit")
+        editMenu.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+        editMenu.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+        editMenu.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+        editMenu.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+
+        let editMenuItem = NSMenuItem(title: "Edit", action: nil, keyEquivalent: "")
+        editMenuItem.submenu = editMenu
+        mainMenu.addItem(editMenuItem)
+
+        NSApp.mainMenu = mainMenu
     }
 
     @objc private func quit() {
