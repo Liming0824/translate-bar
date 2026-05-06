@@ -6,8 +6,9 @@ import SwiftUI
 final class TranslationPanel {
     private var panel: NSPanel?
     private var eventMonitor: Any?
+    var onDismissPanel: (() -> Void)?
 
-    func show(original: String, translation: String, nearMouse: Bool = true) {
+    func show(original: String, translation: String, nearMouse: Bool = true, onSpeak: ((String) -> Void)? = nil) {
         dismiss()
 
         let contentView = TranslationPopupView(
@@ -18,6 +19,7 @@ final class TranslationPanel {
                 NSPasteboard.general.setString(translation, forType: .string)
                 self?.showCopiedFeedback()
             },
+            onSpeak: onSpeak,
             onDismiss: { [weak self] in
                 self?.dismiss()
             }
@@ -97,6 +99,8 @@ final class TranslationPanel {
             NSEvent.removeMonitor(monitor)
             eventMonitor = nil
         }
+        onDismissPanel?()
+        onDismissPanel = nil
     }
 
     private func showCopiedFeedback() {
@@ -113,18 +117,35 @@ struct TranslationPopupView: View {
     let original: String
     let translation: String
     let onCopy: () -> Void
+    var onSpeak: ((String) -> Void)?
     let onDismiss: () -> Void
 
     @State private var copied = false
+    @State private var speaking = false
     private let scrollThreshold = 400
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if !original.isEmpty {
-                Text(original)
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary)
-                    .lineLimit(3)
+                HStack(alignment: .top) {
+                    Text(original)
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                        .lineLimit(3)
+                    Spacer()
+                    if let speak = onSpeak {
+                        Button(action: {
+                            speaking.toggle()
+                            speak(original)
+                        }) {
+                            Image(systemName: speaking ? "speaker.wave.2.fill" : "speaker.wave.2")
+                                .font(.system(size: 13))
+                                .foregroundColor(speaking ? .accentColor : .secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Pronounce original")
+                    }
+                }
             }
 
             ZStack(alignment: .topTrailing) {

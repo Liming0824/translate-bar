@@ -97,11 +97,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let service = TranslationService(apiKey: apiKey)
+        let speechService = SpeechService(apiKey: apiKey)
+        let pair = LanguageDetector.detect(text)
 
         Task { @MainActor in
             do {
                 let result = try await service.translate(text: text)
-                translationPanel.show(original: text, translation: result)
+                self.translationPanel.show(
+                    original: text,
+                    translation: result,
+                    onSpeak: { original in
+                        Task {
+                            if speechService.isPlaying {
+                                speechService.stop()
+                            } else {
+                                try? await speechService.speak(text: original, languageCode: pair.source) {}
+                            }
+                        }
+                    }
+                )
+                self.translationPanel.onDismissPanel = {
+                    speechService.stop()
+                }
             } catch {
                 translationPanel.showError(error.localizedDescription)
             }
